@@ -11,7 +11,7 @@ if ! grep -qi armbian /etc/os-release; then
     echo 'This installer targets Armbian on the Orange Pi, not the development host.' >&2
     exit 1
 fi
-if ! tr '\0' ' ' </proc/device-tree/model 2>/dev/null | grep -qi 'Orange Pi Zero 3'; then
+if ! tr '\0' ' ' </proc/device-tree/model 2>/dev/null | grep -Eqi 'Orange.?Pi.?Zero.?3'; then
     echo 'Device-tree model is not Orange Pi Zero 3; refusing installation.' >&2
     exit 1
 fi
