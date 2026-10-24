@@ -1,0 +1,16 @@
+[Unit]
+Description=Android USB MTP FunctionFS endpoint (upstream umtprd)
+Requires=aawg-usb-gadget.service
+After=aawg-usb-gadget.service
+Before=aawgd.service
+
+[Service]
+Type=forking
+ExecStartPre=/bin/sh -c 'mountpoint -q /dev/ffs-mtp || mount -t functionfs mtp /dev/ffs-mtp'
+ExecStart=/usr/sbin/umtprd
+ExecStop=/usr/bin/pkill -x umtprd
+ExecStopPost=/bin/umount /dev/ffs-mtp
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

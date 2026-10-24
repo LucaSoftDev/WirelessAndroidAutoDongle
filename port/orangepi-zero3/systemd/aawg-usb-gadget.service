@@ -1,0 +1,13 @@
+[Unit]
+Description=Prepare Android Accessory USB configfs gadgets
+After=systemd-modules-load.service
+Before=aawgd.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/usb-gadget-configfs
+ExecStop=/bin/sh -c 'for g in default accessory; do [ ! -e /sys/kernel/config/usb_gadget/$g/UDC ] || echo "" > /sys/kernel/config/usb_gadget/$g/UDC; done'
+
+[Install]
+WantedBy=multi-user.target

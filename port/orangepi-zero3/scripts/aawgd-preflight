@@ -1,0 +1,24 @@
+#!/bin/sh
+# Fail early with actionable diagnostics; this does not modify system setup.
+set -eu
+
+if [ ! -d /sys/class/udc ] || ! find /sys/class/udc -mindepth 1 -maxdepth 1 -print -quit | grep -q .; then
+    echo 'aawgd: no USB Device Controller in /sys/class/udc; verify USB-C OTG role and kernel/DT.' >&2
+    exit 1
+fi
+if [ ! -d /sys/kernel/config/usb_gadget/default ] || [ ! -d /sys/kernel/config/usb_gadget/accessory ]; then
+    echo 'aawgd: upstream default/accessory configfs gadgets are not configured; f_accessory setup is required.' >&2
+    exit 1
+fi
+if [ ! -e /dev/usb_accessory ]; then
+    echo 'aawgd: /dev/usb_accessory is missing; kernel Android Accessory support is required.' >&2
+    exit 1
+fi
+if ! systemctl is-active --quiet bluetooth.service; then
+    echo 'aawgd: BlueZ bluetooth.service is not active.' >&2
+    exit 1
+fi
+if ! ip link show wlan0 >/dev/null 2>&1; then
+    echo 'aawgd: wlan0 is missing; check UWE5622 driver and firmware.' >&2
+    exit 1
+fi

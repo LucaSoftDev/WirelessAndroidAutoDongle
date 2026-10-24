@@ -1,0 +1,36 @@
+#!/bin/sh
+# Create the same default/AOA configfs gadgets as upstream S92usb_gadget.
+set -eu
+CONFIGFS=/sys/kernel/config
+GADGETS=$CONFIGFS/usb_gadget
+
+fail() { echo "usb-gadget-configfs: $*" >&2; exit 1; }
+mountpoint -q "$CONFIGFS" || mount -t configfs none "$CONFIGFS"
+[ -d "$GADGETS" ] || fail 'configfs usb_gadget support is unavailable'
+UDC=$(find /sys/class/udc -mindepth 1 -maxdepth 1 -printf '%f\n' 2>/dev/null | head -n 1)
+[ -n "$UDC" ] || fail 'no USB device controller registered'
+
+setup_gadget() {
+    name=$1 vid=$2 pid=$3 function=$4 serial=$5
+    path=$GADGETS/$name
+    if [ ! -d "$path" ]; then
+        mkdir "$path"
+        echo "$vid" > "$path/idVendor"
+        echo "$pid" > "$path/idProduct"
+        mkdir -p "$path/strings/0x409"
+        echo "$serial" > "$path/strings/0x409/serialnumber"
+        echo 'Wireless Android Auto' > "$path/strings/0x409/manufacturer"
+        echo 'AA Wireless Dongle' > "$path/strings/0x409/product"
+        mkdir -p "$path/functions/$function"
+        mkdir -p "$path/configs/c.1/strings/0x409"
+        echo 'Android Auto' > "$path/configs/c.1/strings/0x409/configuration"
+        echo 500 > "$path/configs/c.1/MaxPower"
+        ln -s "$path/functions/$function" "$path/configs/c.1/"
+    fi
+}
+
+SERIAL=$(tr -cd '[:alnum:]' </proc/device-tree/serial-number 2>/dev/null | tail -c 16 || true)
+[ -n "$SERIAL" ] || SERIAL=0123456789abcdef
+setup_gadget accessory 0x18d1 0x2d00 accessory.usb0 "$SERIAL"
+setup_gadget default 0x18d1 0x4ee1 ffs.mtp "$SERIAL"
+echo 'usb-gadget-configfs: configfs descriptors ready; aawgd controls UDC binding'

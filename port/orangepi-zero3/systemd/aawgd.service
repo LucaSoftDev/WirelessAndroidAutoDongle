@@ -1,0 +1,22 @@
+[Unit]
+Description=Wireless Android Auto gateway daemon (upstream aawgd)
+Documentation=file:/usr/share/doc/aawg-orangepi/README.md
+After=dbus.service bluetooth.service network.target aawg-functionfs.service
+Requires=dbus.service bluetooth.service aawg-functionfs.service aawg-usb-gadget.service
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/aawgd.conf
+ExecStartPre=/usr/local/sbin/aawgd-preflight
+ExecStart=/usr/local/bin/aawgd
+Restart=always
+RestartSec=3
+User=root
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=full
+ReadWritePaths=/sys/kernel/config/usb_gadget /run /var/lib/bluetooth
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,8 @@
+*.sh text eol=lf
+*.mk text eol=lf
+*.in text eol=lf
+*.config text eol=lf
+*.desc text eol=lf
+*.proto text eol=lf
+aa_wireless_dongle/** text eol=lf
+aa_wireless_dongle/**/.empty -text
