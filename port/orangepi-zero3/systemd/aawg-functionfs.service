@@ -6,6 +6,7 @@ Before=aawgd.service
 
 [Service]
 Type=forking
+ExecStartPre=/bin/mkdir -p /dev/ffs-mtp
 ExecStartPre=/bin/sh -c 'mountpoint -q /dev/ffs-mtp || mount -t functionfs mtp /dev/ffs-mtp'
 ExecStart=/usr/sbin/umtprd
 ExecStop=/usr/bin/pkill -x umtprd
