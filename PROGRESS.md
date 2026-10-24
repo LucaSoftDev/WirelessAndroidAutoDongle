@@ -18,8 +18,9 @@ Date: 2026-10-24
 ## Tested
 
 - Repository clone and pinned Buildroot submodule checkout completed.
-- Docker Compose image built. ARM64 `raspberrypi5_defconfig` Buildroot `aawg` and `umtprd` package builds completed. The resulting files in ignored `port/orangepi-zero3/build/` are ELF AArch64 dynamic binaries. This was a compiler check, not an Orange Pi image; use the native Armbian build script for actual installation because Buildroot runtime ABI compatibility is unverified.
-- Ran POSIX shell syntax validation (`sh -n`) on all new scripts successfully.
+- Docker Compose image built. ARM64 `raspberrypi5_defconfig` Buildroot `aawg` and `umtprd` package builds completed. The ignored files in `port/orangepi-zero3/build/` are ELF64 AArch64 PIE binaries. `aawgd` depends on dbus-cxx, sigc++ 3, protobuf-lite 29, and Abseil shared libraries; this was a compiler check, not an Orange Pi image. Buildroot runtime ABI/library compatibility with Armbian is unverified, so use the native Armbian build script for installation.
+- Ran POSIX shell syntax validation (`sh -n`) on every new script successfully. `readelf` confirmed ELF64, AArch64, PIE and listed the `aawgd` shared-library dependencies.
+- Commit `7535138` added the initial Armbian port scaffolding. No remote push was made.
 - No physical board, Android phone or vehicle head unit was available to this development environment; no hardware test is recorded as passed.
 
 ## Pending / blockers
