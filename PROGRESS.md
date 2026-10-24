@@ -22,12 +22,14 @@ Date: 2026-10-24
 - Docker Compose image built. ARM64 `raspberrypi5_defconfig` Buildroot `aawg` and `umtprd` package builds completed. The ignored files in `port/orangepi-zero3/build/` are ELF64 AArch64 PIE binaries. `aawgd` depends on dbus-cxx, sigc++ 3, protobuf-lite 29, and Abseil shared libraries; this was a compiler check, not an Orange Pi image. Buildroot runtime ABI/library compatibility with Armbian is unverified, so use the native Armbian build script for installation.
 - Ran POSIX shell syntax validation (`sh -n`) on every new script successfully. `readelf` confirmed ELF64, AArch64, PIE and listed the `aawgd` shared-library dependencies.
 - Validated the FunctionFS pre-start directory-creation command syntax and reviewed the resulting unit; actual systemd startup and FunctionFS mount remain pending on Orange Pi hardware.
+- Downloaded the Armbian community Debian 13 Trixie minimal image for `orangepizero3` (`26.11.0-trunk.108`, kernel `6.18.57`). The published compressed-image SHA-256 matched (`3d8ef4b125b8b1029a516be9d91e8decb544c3019334626ee22e39ab7ad45015`). Wrote it to the identified 16 GB microSD and verified the entire 1,619,001,344-byte raw image by reading the card back (`a6969da7fab2bb5fe818e4ab90aa2bd28ad3b5c4dbf3dd824abc9d451a899555`). This confirms the card contents only; the board has not booted this image yet.
 - Commit `7535138` added the initial Armbian port scaffolding. No remote push was made.
-- No physical board, Android phone or vehicle head unit was available to this development environment; no hardware test is recorded as passed.
+- The user has the physical board, but it has not yet booted or become remotely accessible to this development environment. No Android phone or vehicle head unit was available; no hardware test is recorded as passed.
 
 ## Pending / blockers
 
 - Native Armbian build script has not run on the board; its archive URLs/dependency availability must be confirmed on the selected Armbian image.
+- Boot the newly flashed card on the Orange Pi, complete Armbian first login, and establish SSH over Ethernet before installing the project scripts and building the daemon on-target.
 - Runtime service startup, gadget binding, AP setup and AOA behavior remain unverified.
 - Confirm USB-C pin routing/role and VBUS behavior for the actual board revision; verify Armbian UDC, USB gadget and AOA `f_accessory` support on board.
 - Verify UWE5622 Wi-Fi AP on 5 GHz, Bluetooth Classic (BR/EDR), coexistence and firmware initialization on the chosen Armbian image.
