@@ -29,7 +29,8 @@ Date: 2026-10-24
 - On-target `iw list` advertises AP mode on both 2.4 GHz and 5 GHz. A temporary WPA2 hostapd test on channel 36 returned `AP-ENABLED` while Bluetooth remained active; the test was stopped and the regulatory setting reset. The development PC's Wi-Fi scan did not show the test SSID, so independent client discovery, DHCP, throughput and coexistence stability remain unverified.
 - A temporary ConfigFS CDC ACM gadget bound to `musb-hdrc.4.auto`; Windows enumerated `USB Composite Device` (`VID_1D6B&PID_0104`) and `USB Serial Device (COM5)`. The test gadget was unbound and removed. This confirms the USB-C data path and generic peripheral gadget functionality with this setup.
 - The kernel config does **not** enable `CONFIG_USB_MUSB_GADGET` and has no `CONFIG_USB_CONFIGFS_F_ACC`/`usb_f_accessory` module. `/dev/usb_accessory` is absent. Generic serial gadget success therefore does not establish AOA support; the upstream daemon cannot run end-to-end until an AOA-capable kernel is available. The UDC is registered but AOA remains blocked.
-- Commit `7535138` added the initial Armbian port scaffolding. No remote push was made. No phone or vehicle head-unit Android Auto session has been tested.
+- Installed hostapd for the non-persistent radio test only. Installed the target daemon and `umtprd`; the systemd units have not been installed or enabled. Build dependencies and `dbus-cxx` are present on the board. No Android phone or vehicle head-unit Android Auto session has been tested.
+- Commits `7535138` (Armbian port scaffolding) and `b0ce133` (native build and model detection fixes) are local. No remote push was made.
 
 ## Pending / blockers
 
