@@ -5,7 +5,7 @@ set -eu
 CONFIG=/etc/aawgd.conf
 [ ! -r "$CONFIG" ] || . "$CONFIG"
 
-SSID=${AAWG_WIFI_SSID:-AAWirelessDongle}
+SSID=${AAWG_WIFI_SSID:-Android_Auto_Peugeot_208}
 PASSWORD=${AAWG_WIFI_PASSWORD:-ConnectAAWirelessDongle}
 COUNTRY=${AAWG_COUNTRY_CODE:-BR}
 

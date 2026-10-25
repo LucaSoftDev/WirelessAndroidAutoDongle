@@ -66,7 +66,7 @@ Once you've already tried multiple times and it still does not work, you can ssh
 
 - Set a static password by setting the `AAWG_WIFI_PASSWORD` config, and enable SSH by setting the `AAWG_ENABLE_SSH` config. See [the instructions to update the configurations](#Configurations).
 - Connect the device to the headunit, let it boot and try to connect once. The logs are not persisted across reboots, so you need to get the logs in the same instance soon after you observe the issue.
-- Connect to the device using wifi (SSID: AAWirelessDongle, Password: \<as set in the first step>).
+- Connect to the device using wifi (SSID: Android_Auto_Peugeot_208, Password: \<as set in the first step>).
 - SSH into the device (username: root, password: password, see relevant defconfigs e.g. [raspberrypi0w_defconfig](aa_wireless_dongle/configs/raspberrypi0w_defconfig)).
 - Once you're in, try to have a look at `/var/log/messages` file, it should have most relevant logs to start with. You can also copy the file and attach to issues you create if any.
 
