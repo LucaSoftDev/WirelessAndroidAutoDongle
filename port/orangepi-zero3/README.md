@@ -6,7 +6,7 @@ This is an Armbian bring-up layer for the upstream `aawgd` daemon. It keeps the 
 
 The tested Orange Pi Zero 3 and Armbian image expose `musb-hdrc.4.auto` as a USB Device Controller, and a CDC ACM ConfigFS gadget enumerated on the development PC. The kernel also has the Android Accessory ConfigFS function. This confirms the basic data path for this board/image, but not the host-initiated AOA handshake or USB-C VBUS/power behavior in the vehicle. A regular USB host port cannot substitute for the USB-C OTG data port.
 
-The tested kernel exposes `f_accessory`, and the AW859A/UWE5622 driver exposes BR/EDR Bluetooth and Wi-Fi AP mode. The project AP was visible to the development PC on 5 GHz channel 36, and the daemon starts with its Bluetooth profiles active. Phone pairing, concurrent Bluetooth/Wi-Fi traffic and AOA remain to be validated on this image.
+The tested kernel exposes `f_accessory`, and the AW859A/UWE5622 driver exposes BR/EDR Bluetooth and Wi-Fi AP mode. The project AP was visible to the development PC on 5 GHz channel 36. The daemon starts its Bluetooth profiles; a non-interactive BlueZ pairing agent is installed as a separate systemd service because the upstream Armbian setup did not launch the Buildroot image's `bt-agent`. Phone pairing, concurrent Bluetooth/Wi-Fi traffic and AOA remain to be validated on this image.
 
 ## Host development
 

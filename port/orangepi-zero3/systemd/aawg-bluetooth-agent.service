@@ -1,0 +1,13 @@
+[Unit]
+Description=Non-interactive Bluetooth pairing agent for Android Auto
+After=bluetooth.service
+Requires=bluetooth.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/bt-agent --capability=NoInputNoOutput
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

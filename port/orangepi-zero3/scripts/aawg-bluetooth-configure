@@ -1,0 +1,24 @@
+#!/bin/sh
+# Keep the Android Auto adapter pairable/discoverable during phone setup.
+set -eu
+
+CONF=/etc/bluetooth/main.conf
+if [ "$(id -u)" -ne 0 ]; then
+    echo 'Run as root.' >&2
+    exit 1
+fi
+[ -f "$CONF" ] || { echo "Missing $CONF" >&2; exit 1; }
+
+set_bluez_option() {
+    key=$1
+    value=$2
+    if grep -Eq "^[[:space:]#]*${key}[[:space:]]*=" "$CONF"; then
+        sed -i -E "s/^[[:space:]#]*${key}[[:space:]]*=.*/${key} = ${value}/" "$CONF"
+    else
+        sed -i "/^\[General\]/a ${key} = ${value}" "$CONF"
+    fi
+}
+
+set_bluez_option DiscoverableTimeout 0
+set_bluez_option PairableTimeout 0
+set_bluez_option AlwaysPairable true

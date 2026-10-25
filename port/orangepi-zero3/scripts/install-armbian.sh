@@ -21,13 +21,15 @@ PORT_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 REPO_DIR=$(CDPATH= cd -- "$PORT_DIR/../../" && pwd)
 
 apt-get update
-DEBIAN_FRONTEND=noninteractive apt-get install -y bluez dbus hostapd dnsmasq iw rfkill
+DEBIAN_FRONTEND=noninteractive apt-get install -y bluez bluez-tools dbus hostapd dnsmasq iw rfkill
 # The generic Debian services have no Android Auto AP configuration. Keep them
 # stopped; the dedicated units below bind only wlan0 and serve its DHCP range.
 systemctl disable --now hostapd.service dnsmasq.service 2>/dev/null || true
 install -D -m 0755 "$SCRIPT_DIR/aawgd-preflight" /usr/local/sbin/aawgd-preflight
+install -D -m 0755 "$SCRIPT_DIR/aawg-bluetooth-configure" /usr/local/sbin/aawg-bluetooth-configure
 install -D -m 0755 "$SCRIPT_DIR/aawg-wifi-ap-configure" /usr/local/sbin/aawg-wifi-ap-configure
 install -D -m 0644 "$PORT_DIR/systemd/aawgd.service" /etc/systemd/system/aawgd.service
+install -D -m 0644 "$PORT_DIR/systemd/aawg-bluetooth-agent.service" /etc/systemd/system/aawg-bluetooth-agent.service
 install -D -m 0644 "$PORT_DIR/systemd/aawg-usb-gadget.service" /etc/systemd/system/aawg-usb-gadget.service
 install -D -m 0644 "$PORT_DIR/systemd/aawg-functionfs.service" /etc/systemd/system/aawg-functionfs.service
 install -D -m 0644 "$PORT_DIR/systemd/aawg-wifi-ap.service" /etc/systemd/system/aawg-wifi-ap.service
@@ -38,6 +40,8 @@ install -D -m 0755 "$SCRIPT_DIR/opi3-diagnose.sh" /usr/local/sbin/opi3-diagnose
 install -D -m 0755 "$SCRIPT_DIR/usb-gadget-configfs" /usr/local/sbin/usb-gadget-configfs
 install -D -m 0644 "$REPO_DIR/aa_wireless_dongle/board/common/rootfs_overlay/etc/aawgd.conf" /etc/aawgd.conf
 install -D -m 0644 "$REPO_DIR/aa_wireless_dongle/board/common/rootfs_overlay/etc/umtprd/umtprd.conf" /etc/umtprd/umtprd.conf
+
+/usr/local/sbin/aawg-bluetooth-configure
 
 AAWGD_BINARY=${1:-}
 UMTPRD_BINARY=${2:-}
@@ -55,7 +59,7 @@ elif [ ! -x /usr/sbin/umtprd ]; then
 fi
 
 systemctl daemon-reload
-systemctl enable aawg-usb-gadget.service aawg-functionfs.service aawg-wifi-ap.service aawg-dnsmasq.service
+systemctl enable aawg-usb-gadget.service aawg-functionfs.service aawg-wifi-ap.service aawg-dnsmasq.service aawg-bluetooth-agent.service
 systemctl enable aawgd.service
 echo 'Installed. Complete the phone AOA and vehicle checks in port/orangepi-zero3/TESTING.md before relying on the dongle.'
 echo 'Run opi3-diagnose for a hardware report. Start the full stack with: systemctl start aawgd'

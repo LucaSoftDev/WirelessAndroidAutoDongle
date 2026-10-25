@@ -1,8 +1,8 @@
 [Unit]
 Description=Wireless Android Auto gateway daemon (upstream aawgd)
 Documentation=file:/usr/share/doc/aawg-orangepi/README.md
-After=dbus.service bluetooth.service aw859a-bluetooth.service network.target aawg-functionfs.service aawg-usb-gadget.service aawg-dnsmasq.service aawg-wifi-ap.service
-Requires=dbus.service bluetooth.service aw859a-bluetooth.service aawg-functionfs.service aawg-usb-gadget.service aawg-dnsmasq.service aawg-wifi-ap.service
+After=dbus.service bluetooth.service aawg-bluetooth-agent.service aw859a-bluetooth.service network.target aawg-functionfs.service aawg-usb-gadget.service aawg-dnsmasq.service aawg-wifi-ap.service
+Requires=dbus.service bluetooth.service aawg-bluetooth-agent.service aw859a-bluetooth.service aawg-functionfs.service aawg-usb-gadget.service aawg-dnsmasq.service aawg-wifi-ap.service
 
 [Service]
 Type=simple
