@@ -22,10 +22,17 @@ REPO_DIR=$(CDPATH= cd -- "$PORT_DIR/../../" && pwd)
 
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y bluez dbus hostapd dnsmasq iw rfkill
+# The generic Debian services have no Android Auto AP configuration. Keep them
+# stopped; the dedicated units below bind only wlan0 and serve its DHCP range.
+systemctl disable --now hostapd.service dnsmasq.service 2>/dev/null || true
 install -D -m 0755 "$SCRIPT_DIR/aawgd-preflight" /usr/local/sbin/aawgd-preflight
+install -D -m 0755 "$SCRIPT_DIR/aawg-wifi-ap-configure" /usr/local/sbin/aawg-wifi-ap-configure
 install -D -m 0644 "$PORT_DIR/systemd/aawgd.service" /etc/systemd/system/aawgd.service
 install -D -m 0644 "$PORT_DIR/systemd/aawg-usb-gadget.service" /etc/systemd/system/aawg-usb-gadget.service
 install -D -m 0644 "$PORT_DIR/systemd/aawg-functionfs.service" /etc/systemd/system/aawg-functionfs.service
+install -D -m 0644 "$PORT_DIR/systemd/aawg-wifi-ap.service" /etc/systemd/system/aawg-wifi-ap.service
+install -D -m 0644 "$PORT_DIR/systemd/aawg-dnsmasq.service" /etc/systemd/system/aawg-dnsmasq.service
+install -D -m 0644 "$PORT_DIR/config/dnsmasq.conf" /etc/aawg-dnsmasq.conf
 install -D -m 0644 "$PORT_DIR/README.md" /usr/share/doc/aawg-orangepi/README.md
 install -D -m 0755 "$SCRIPT_DIR/opi3-diagnose.sh" /usr/local/sbin/opi3-diagnose
 install -D -m 0755 "$SCRIPT_DIR/usb-gadget-configfs" /usr/local/sbin/usb-gadget-configfs
@@ -35,20 +42,20 @@ install -D -m 0644 "$REPO_DIR/aa_wireless_dongle/board/common/rootfs_overlay/etc
 AAWGD_BINARY=${1:-}
 UMTPRD_BINARY=${2:-}
 if [ -n "$AAWGD_BINARY" ] && [ -x "$AAWGD_BINARY" ]; then
-    install -D -m 0755 "$AAWGD_BINARY" /usr/local/bin/aawgd
+    [ "$AAWGD_BINARY" = /usr/local/bin/aawgd ] || install -D -m 0755 "$AAWGD_BINARY" /usr/local/bin/aawgd
 elif [ ! -x /usr/local/bin/aawgd ]; then
     echo 'Missing /usr/local/bin/aawgd. Build natively with build-aawgd-on-armbian.sh first.' >&2
     exit 2
 fi
 if [ -n "$UMTPRD_BINARY" ] && [ -x "$UMTPRD_BINARY" ]; then
-    install -D -m 0755 "$UMTPRD_BINARY" /usr/sbin/umtprd
+    [ "$UMTPRD_BINARY" = /usr/sbin/umtprd ] || install -D -m 0755 "$UMTPRD_BINARY" /usr/sbin/umtprd
 elif [ ! -x /usr/sbin/umtprd ]; then
     echo 'Missing /usr/sbin/umtprd. Build natively with build-aawgd-on-armbian.sh first.' >&2
     exit 2
 fi
 
 systemctl daemon-reload
-systemctl enable aawg-usb-gadget.service aawg-functionfs.service
+systemctl enable aawg-usb-gadget.service aawg-functionfs.service aawg-wifi-ap.service aawg-dnsmasq.service
 systemctl enable aawgd.service
-echo 'Installed. USB configfs gadgets and Wi-Fi AP still require board-specific validation/configuration.'
-echo 'Run opi3-diagnose, complete port/orangepi-zero3/TESTING.md, then start with: systemctl start aawgd'
+echo 'Installed. Complete the phone AOA and vehicle checks in port/orangepi-zero3/TESTING.md before relying on the dongle.'
+echo 'Run opi3-diagnose for a hardware report. Start the full stack with: systemctl start aawgd'

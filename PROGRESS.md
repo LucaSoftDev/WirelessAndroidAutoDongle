@@ -4,13 +4,16 @@ Date: 2026-10-25
 
 ## Latest hardware validation (2026-10-25)
 
-- Installed the verified Armbian `6.18.58` image and matching DTB packages on the Orange Pi after the user explicitly declined a microSD backup. The board rebooted successfully and is reachable on the network. Running kernel: `6.18.58-current-sunxi64`.
-- On the board, confirmed `/sys/class/udc/musb-hdrc.4.auto`, ConfigFS, `CONFIG_USB_MUSB_GADGET=y`, `CONFIG_USB_CONFIGFS_UEVENT=y`, and `CONFIG_USB_CONFIGFS_F_ACC=y`. `modprobe usb_f_accessory` succeeds and `/dev/usb_accessory` is created by the project's configfs setup.
-- Real USB data path validated: a temporary CDC ACM configfs gadget reached UDC state `configured`; Windows enumerated `USB Composite Device` (`VID_1D6B:0104`) and `USB Serial Device (COM5)`. The temporary CDC gadget was removed.
-- A direct bind of the AOA accessory gadget (`VID_18D1:2D00`) did **not** enumerate on Windows. This is not yet a valid Android Accessory handshake test: upstream `aawgd` normally binds the default MTP gadget first and switches to the AOA gadget only after the host sends the AOA start request. No compatible Android Auto head unit or phone session has been tested.
-- Tried bringing up the default MTP gadget for a Windows-side enumeration check, but the matching systemd units are not installed and subsequent SSH command sessions stopped returning command output (SSH authentication/TCP still succeed). Target state may therefore contain a temporary configfs binding; recover SSH/serial or reboot the board, then inspect both gadget `UDC` attributes and unbind them before continuing. Do not claim AOA enumeration passed.
-- After the user rebooted the board, ICMP and TCP/22 remained reachable and SSH public-key authentication succeeded, but new SSH command sessions and SFTP still did not return output. The board-side inspection therefore remains blocked; use the already-open root console to run the read-only diagnostic below before further gadget changes.
-- No project services were installed or enabled on the board. No Wi-Fi AP, phone pairing, Wireless Android Auto, or head-unit tests have been run.
+- Installed and booted the Armbian `6.18.58` kernel/DTB with MUSB gadget and Android Accessory support. Running kernel: `6.18.58-current-sunxi64`.
+- Offline SD recovery enabled `ssh.socket` and removed the network ordering dependency. After the user reinserted and powered the card, SSH root public-key login succeeded at `192.168.15.73`; the override permissions were corrected to `0644` after systemd warned about the raw-image permissions.
+- Board diagnostics confirmed `/sys/class/udc/musb-hdrc.4.auto`, ConfigFS, `CONFIG_USB_MUSB_GADGET=y`, `CONFIG_USB_CONFIGFS_UEVENT=y`, and `CONFIG_USB_CONFIGFS_F_ACC=y`. The `/dev/usb_accessory` node exists after accessory configfs setup.
+- Real USB data path validated with a temporary CDC ACM gadget: UDC reached `configured`; the Windows host enumerated the device. The gadget was unbound and removed; the UDC returned to `not attached`.
+- The installed 5 GHz AP service is advertising `AAWirelessDongle` on channel 36 / 5180 MHz with WPA2 and country `BR`. A read-only Windows Wi-Fi scan saw it at 92% signal. The dedicated DHCP service is active on `10.0.0.1/24`, range `10.0.0.2`–`10.0.0.20`; no phone DHCP lease or sustained throughput test yet.
+- Bluetooth HCI `hci0` reports BR/EDR support. With `aawgd` running, BlueZ advertises `WirelessAADongle-8ae3d5` as discoverable and pairable. Phone pairing, SDP exchange and RFCOMM session still need an Android phone.
+- Installed and enabled the Orange Pi systemd units. `umtprd` is active on FunctionFS, `aawgd` is active and listening on TCP `5288`, and AP/DHCP/gadget preparation units are active. AAWG is configured phone-first; without a paired phone, it leaves both UDC gadget bindings empty and the UDC `not attached`.
+- Fixed two bring-up issues found during live setup: load `libcomposite` before creating ConfigFS gadgets, and declare foreground `umtprd` as systemd `Type=simple` (with the `/dev/ffs-mtp` mountpoint created first).
+- No `BUG: workqueue lockup` or `android_work [libcomposite]` has reappeared in the short current service run. A MUSB `request ... not queued to ep1in` message appeared during gadget teardown. The previous long lockup is not considered fixed; sustained AOA traffic remains untested.
+- No AOA host-initiated handshake, Android Auto session, Peugeot head-unit, audio/video/microphone/touch, reconnection, or abrupt-power-cut test has been run.
 
 ### Kernel lockup investigation (in progress)
 
@@ -32,6 +35,8 @@ Date: 2026-10-25
 - Added `port/orangepi-zero3/` Armbian bring-up documentation, a read-only board diagnostic, target-only native ARM64 build and installer scripts, daemon preflight and systemd services.
 - Added systemd preparation for the two original configfs gadgets (default/MTP and AOA accessory) and the upstream `umtprd` FunctionFS endpoint. These still require a kernel with `f_accessory` and should be tried only after the diagnostic and simple gadget test.
 - Follow-up review found that the FunctionFS systemd unit assumed `/dev/ffs-mtp` existed. The unit now creates this volatile mountpoint on each start before mounting FunctionFS, so a clean boot does not fail solely because `/dev` was recreated.
+- Added an Orange Pi AP configuration script plus dedicated systemd AP/DHCP units for `wlan0` on 5 GHz channel 36, with the correct Brazil regulatory country. The installer disables generic Debian hostapd/dnsmasq instances and enables only the dongle-specific services.
+- The ConfigFS setup explicitly loads `libcomposite`; the FunctionFS service uses `Type=simple` for foreground `umtprd`; and systemd orders the AP and proxy after the Armbian AW859A Wi-Fi/Bluetooth driver services.
 - Left upstream daemon and Raspberry Pi Buildroot configuration unchanged. Armbian service refuses to start if UDC, configfs gadget prerequisites, `/dev/usb_accessory`, BlueZ, or `wlan0` are missing.
 
 ## Tested
@@ -51,25 +56,20 @@ Date: 2026-10-25
 - Kernel cross-build attempts exposed case-colliding Linux file paths in the Windows-originated Armbian checkout (`xt_DSCP.h`/`xt_dscp.h`, similar netfilter headers and `.c` files). Restoring the tracked files in the Armbian pre-build step allowed the build past compile errors and through module compilation to `modpost`; `modpost` then reported duplicate exports from `xt_RATEEST`/`xt_rateest`, leading to a broader restore list for all colliding paths.
 - After freeing space on `C:`, Docker still had damaged/unavailable containerd blobs. With authorization, Docker Desktop and its WSL backend were restarted to release the busy data disk; the persistent `opi3-armbian-build` volume was readable afterward. No volumes or images were removed. The separate PostgreSQL container restarted and is running again.
 - The first recovered kernel build completed but inspection showed `CONFIG_USB_MUSB_GADGET` was off, so its AOA image was rejected as an install candidate. Enabled the MUSB peripheral mode in the Orange Pi kernel staging script and rebuilt. The second build completed successfully in 17:47, kernel `6.18.58-S2926-D68f5-Pc682-C5e8f-H0759-HK01ba-Vc222-Bd5c8-R448a`. Verified the packaged kernel config has `CONFIG_USB_MUSB_GADGET=y`, `CONFIG_USB_CONFIGFS_UEVENT=y`, and `CONFIG_USB_CONFIGFS_F_ACC=y`; the image package contains `usb_f_accessory.ko`, `musb_hdrc.ko`, and `sunxi.ko`. Copied the kernel image and DTB `.deb` files to ignored `port/orangepi-zero3/build/kernel-candidate/`; SHA-256: image `a00e1151d477b91a723561eff8b27d5fddda037dbdfa7ac1051cf66751bc55c3`, DTB `e428824bf66141053f4988c10fd6582136e3f4b5cc49bd40b0c83cf84baff594`. The Orange Pi still boots the original `6.18.57` kernel; no kernel package has been installed.
-- Installed hostapd for the non-persistent radio test only. Installed the target daemon and `umtprd`; the systemd units have not been installed or enabled. Build dependencies and `dbus-cxx` are present on the board. No Android phone or vehicle head-unit Android Auto session has been tested.
-- Changes remain local; no remote push was made.
+- Installed hostapd/dnsmasq and the project-specific systemd services. The generic Debian hostapd/dnsmasq units are disabled; the dongle's dedicated services bind only `wlan0`. `aawgd`, `umtprd`, AP and DHCP services are currently active on the board. No Android phone or vehicle head-unit session has been tested.
+- Port source changes are committed locally only; no remote Git push was made. The current port service files/config were installed on the Orange Pi over SSH.
 
 ## Pending / blockers
 
-- The corrected native ARM64 build script completed end-to-end on the Orange Pi; both target binaries were rebuilt and installed.
-- Recover target command access and clean up any temporarily bound gadget before proceeding. Kernel/UDC/AOA function prerequisites are now present; normal AOA host-initiated handshake and MTP/FunctionFS behavior still need validation. Do not enable the proxy service until these checks pass.
-- Verify AP discovery from a separate phone/client, DHCP, sustained throughput, and Wi-Fi/Bluetooth coexistence. Bluetooth Classic HCI is active, but phone pairing, SDP, and RFCOMM profile exchange have not been validated.
-- Confirm the actual board revision's USB-C power/VBUS behavior and test the normal AOA host-initiated handshake against the car head unit or a suitable test host without back-feeding power.
-- Complete end-to-end Android Auto and power-cut/endurance testing on the Peugeot head unit.
-- The installer and systemd units remain uninstalled/unenabled on the board pending USB handshake validation; current hostapd test package was installed for the temporary AP test only. No host/PC network configuration was changed.
-- The lockup mitigation kernel candidate has not been installed. Current running kernel continues to show the workqueue lockup; keep USB gadget/proxy activity paused until installing the candidate and checking boot, AOA behavior, and sustained kernel logs. The SSH command channel issue may require using the user's interactive `lucas` session or root key path.
-- After the user power-cycled the board, ping and TCP/22 respond and SSH key exchange succeeds. The root key is accepted and authentication completes, but the remote session never returns a shell or command output; `lucas` batch authentication with available keys is denied. No remote install was attempted. Restore an interactive board shell or working SSH command channel before installing anything.
-- User-provided post-reboot logs confirm the same workqueue lockup persists 54 minutes after boot: `android_work [libcomposite]` is in-flight, with reported stuck duration increasing from 2826 to 2979 seconds and load average around 6. The candidate kernel therefore remains uninstalled. A further root interactive SSH attempt and package transfer both timed out after authentication/connection setup; no remote files were changed.
-- A follow-up attempted to inspect the latest `android_work` worker PID (`7941`) via `/proc`, but it no longer existed by the time `ps` and `cat` ran. No worker stack was captured; the latest `in-flight` line is only a time-specific snapshot. Installing the candidate remains blocked by the root SSH session/transfer failure.
+- Pair a test Android phone with `WirelessAADongle-8ae3d5`; verify the AA Bluetooth profile, SDP, RFCOMM, Wi-Fi association and actual DHCP lease while retaining the SSH link over Ethernet.
+- Capture the normal AOA sequence from the smartphone: default gadget enumeration, host AOA start request, accessory VID/PID enumeration, `/dev/usb_accessory` data path, and byte-forwarded TCP session. The current daemon is idle in phone-first mode; no AOA handshake has occurred.
+- Monitor the kernel during repeated AOA attach/detach and extended traffic. The historical `android_work [libcomposite]` workqueue lockup has not recurred during this short run, but was not disproven; investigate any new lockup before vehicle testing.
+- Confirm board revision USB-C VBUS/power behavior and test with the head unit without back-feeding the PC. Then validate Android Auto video/audio/touch/microphone, reconnection, abrupt power cut, filesystem health, heat and endurance in the Peugeot.
+- DHCP daemon is running, but no lease/client throughput or Wi-Fi/Bluetooth coexistence test has been completed.
 
 ## Next recommended task
 
-Run the read-only board diagnostic from the user's root console and restore SSH command execution. Inspect/unbind any temporary gadget, then validate default MTP/FunctionFS and the host-initiated AOA handshake. The installed kernel is the verified AOA-capable `6.18.58`; proceed with proxy services and real head-unit/phone validation only after USB gadget state is clean.
+Have the user test with an Android phone in range. Observe `journalctl -fu aawgd.service`, BlueZ pairing/RFCOMM state, dnsmasq lease logs and UDC state over SSH. Validate the phone-initiated AOA transition before connecting to the Peugeot head unit.
 
 ## Offline SSH recovery (2026-10-25)
 
@@ -84,4 +84,4 @@ Run the read-only board diagnostic from the user's root console and restore SSH 
 - Hardware inspection on the running board found `musb-hdrc.4.auto` registered at `/sys/class/udc`, ConfigFS mounted, `CONFIG_USB_MUSB_GADGET=y`, and FunctionFS/configfs accessory support in the kernel config. The UDC reports high-speed maximum; no gadget was configured before testing.
 - A temporary ConfigFS CDC ACM gadget was bound to the UDC and reached state `configured`, then unbound and removed. The UDC returned to `not attached`, and `/sys/kernel/config/usb_gadget` was empty afterward. This validates a basic gadget bind/unbind on the physical board; it does not validate AOA or Android Auto.
 - No `BUG: workqueue lockup` or `android_work [libcomposite]` appeared in `dmesg` during the brief current boot/smoke-test window. The prior lockup is not considered fixed or disproven by this short run.
-- Still pending: Bluetooth Classic/RFCOMM/SDP, 5 GHz AP with concurrent Bluetooth, AOA handshake/IDs, proxy deployment and reconnect, and all Peugeot head-unit/audio/video/microphone tests. Vehicle tests have not been run.
+- Later live validation confirms aawgd BlueZ profile registration and discoverable/pairable state, 5 GHz AP visibility, active DHCP, active FunctionFS/umtprd, and aawgd TCP listener. Phone-level Bluetooth/RFCOMM/DHCP tests, AOA handshake/IDs, reconnect, and Peugeot head-unit/audio/video/microphone tests remain pending.

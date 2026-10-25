@@ -4,7 +4,7 @@ Record the exact Armbian image, kernel (`uname -a`), board revision and test dat
 
 1. **Boot/hardware:** run `scripts/opi3-diagnose.sh`; confirm model, kernel, storage, thermal zone, radio interfaces and relevant kernel messages.
 2. **Bluetooth Classic:** confirm an HCI controller is powered, discoverable, and supports BR/EDR. Pair a test phone; verify BlueZ D-Bus, SDP and RFCOMM.
-3. **Wi-Fi AP:** inspect `iw list`; configure a temporary hostapd AP first on 2.4 GHz, then 5 GHz on a locally permitted channel. Verify DHCP and sustained traffic while Bluetooth is active.
+3. **Wi-Fi AP:** inspect `iw list`; verify the project WPA2 AP on 5 GHz channel 36 (or another locally permitted channel), obtain a real phone DHCP lease, and measure sustained traffic while Bluetooth is active.
 4. **USB simple gadget:** verify configfs and an unbound UDC. Bind a harmless supported gadget (for example `g_serial` or `g_ether`) and confirm host-side enumeration, then unbind it. Do not test with the head unit yet.
 5. **AOA gadget:** verify configfs `functions/accessory.*`, USB accessory kernel support and `/dev/usb_accessory`. Follow AOA default to accessory negotiation and confirm both IDs enumerate on a computer.
 6. **Proxy:** build/install `aawgd`, enable the Armbian service, inspect journal logs, and validate reconnect after phone Wi-Fi/BT toggles.
@@ -17,8 +17,12 @@ Board access was restored by editing the SD root filesystem offline, then verifi
 
 | Step | Result | Evidence / remaining work |
 |---|---|---|
-| Boot / SSH | **Partial pass** | SSH socket and service active; root public-key login succeeded at `192.168.15.73`; board reported `Linux orangepizero3 6.18.58-current-sunxi64 #2 ... aarch64`. Full `opi3-diagnose.sh` inventory still pending. |
-| USB Gadget basic | **Pass** | ConfigFS CDC ACM gadget bound to `musb-hdrc.4.auto`, reached UDC state `configured`, then unbound and removed. UDC returned to `not attached` and gadget configfs was empty. |
-| Bluetooth, Wi-Fi AP, AOA, proxy, vehicle and endurance | **Pending** | Not executed. The short post-boot window without workqueue warnings does not resolve the earlier `android_work [libcomposite]` lockup. |
+| Boot / SSH | **Pass** | Orange Pi Zero 3, Armbian ARM64, kernel `6.18.58-current-sunxi64`; SSH socket/service active and root key login succeeded at `192.168.15.73`. Read-only diagnostic script ran; board model, radios, thermal sensors and `musb-hdrc.4.auto` UDC were reported. |
+| USB Gadget basic | **Pass** | ConfigFS CDC ACM gadget bound to `musb-hdrc.4.auto`, reached UDC state `configured`, then unbound and removed. UDC returned to `not attached`. Windows enumerated the test device. |
+| Bluetooth | **Partial** | HCI `hci0` reports BR/EDR and RFCOMM kernel support. `aawgd` registered its AA Wireless/HSP profiles and BlueZ reports `WirelessAADongle-8ae3d5` discoverable/pairable. No Android phone has paired; SDP/RFCOMM profile exchange remains pending. |
+| Wi-Fi AP | **Partial** | The project AP service is active; Windows saw WPA2 SSID `AAWirelessDongle` on 5 GHz channel 36 / 5180 MHz at 92% signal. DHCP service is active for `10.0.0.2`–`10.0.0.20`; no phone lease, sustained throughput, or concurrent phone Bluetooth test yet. |
+| FunctionFS / proxy | **Partial** | `umtprd` is active on FunctionFS `/dev/ffs-mtp`; `aawgd` is active, listening on TCP `5288`. No phone connection has reached the proxy. |
+| AOA | **Pending** | ConfigFS `accessory.usb0` and `/dev/usb_accessory` exist, but the normal host-initiated AOA start request and transition from default MTP to accessory VID/PID have not been observed. The phone-first daemon leaves the UDC unbound while no phone is paired. |
+| Vehicle / endurance | **Pending** | No Peugeot head-unit session, media/microphone/touch validation, reconnection, abrupt-power-cut, heat or endurance test. The short live run with no workqueue lockup does not resolve the historical `android_work [libcomposite]` stall. |
 
-The basic CDC ACM smoke test is not an AOA test and does not establish Orange Pi USB-C electrical/power behavior, AOA negotiation, or Peugeot head-unit compatibility. Continue with the AOA default-to-accessory handshake only after capturing the current kernel's complete relevant configuration and reviewing the existing AOA gadget script/service. No Peugeot head-unit test has been run.
+The CDC ACM smoke test is not an AOA test and does not establish USB-C electrical/power behavior or Peugeot compatibility. The PC network configuration was not changed. Next, pair a test Android phone and record Bluetooth/RFCOMM, DHCP lease, AOA transition, and proxy logs before attempting vehicle validation.

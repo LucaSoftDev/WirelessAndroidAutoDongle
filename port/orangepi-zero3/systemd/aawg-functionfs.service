@@ -5,7 +5,7 @@ After=aawg-usb-gadget.service
 Before=aawgd.service
 
 [Service]
-Type=forking
+Type=simple
 ExecStartPre=/bin/mkdir -p /dev/ffs-mtp
 ExecStartPre=/bin/sh -c 'mountpoint -q /dev/ffs-mtp || mount -t functionfs mtp /dev/ffs-mtp'
 ExecStart=/usr/sbin/umtprd

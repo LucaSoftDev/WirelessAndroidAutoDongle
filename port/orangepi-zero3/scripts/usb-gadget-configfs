@@ -6,6 +6,9 @@ GADGETS=$CONFIGFS/usb_gadget
 
 fail() { echo "usb-gadget-configfs: $*" >&2; exit 1; }
 mountpoint -q "$CONFIGFS" || mount -t configfs none "$CONFIGFS"
+# The Orange Pi Armbian kernel ships configfs gadgets as a module. Mounting
+# configfs alone does not register the usb_gadget subsystem.
+modprobe libcomposite
 [ -d "$GADGETS" ] || fail 'configfs usb_gadget support is unavailable'
 UDC=$(find /sys/class/udc -mindepth 1 -maxdepth 1 -printf '%f\n' 2>/dev/null | head -n 1)
 [ -n "$UDC" ] || fail 'no USB device controller registered'

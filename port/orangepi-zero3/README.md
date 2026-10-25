@@ -4,9 +4,9 @@ This is an Armbian bring-up layer for the upstream `aawgd` daemon. It keeps the 
 
 ## Current support boundary
 
-This checkout does **not** prove that every Orange Pi Zero 3 image exposes the USB peripheral controller or the Android Accessory function. The USB-C connector is the candidate USB0/OTG data port and supplies board power, but it must be confirmed against the exact board revision, image, device tree, and actual host enumeration. A regular USB host port cannot substitute for it.
+The tested Orange Pi Zero 3 and Armbian image expose `musb-hdrc.4.auto` as a USB Device Controller, and a CDC ACM ConfigFS gadget enumerated on the development PC. The kernel also has the Android Accessory ConfigFS function. This confirms the basic data path for this board/image, but not the host-initiated AOA handshake or USB-C VBUS/power behavior in the vehicle. A regular USB host port cannot substitute for the USB-C OTG data port.
 
-Armbian kernel support may expose a UDC while still omitting `f_accessory`. The AW859A/UWE5622 radio is also image/kernel dependent. Verify Bluetooth BR/EDR and Wi-Fi AP operation on the actual image before attempting the full proxy. Reports of AP/5 GHz operation are not proof for the selected Armbian kernel/firmware or concurrent Bluetooth coexistence.
+The tested kernel exposes `f_accessory`, and the AW859A/UWE5622 driver exposes BR/EDR Bluetooth and Wi-Fi AP mode. The project AP was visible to the development PC on 5 GHz channel 36, and the daemon starts with its Bluetooth profiles active. Phone pairing, concurrent Bluetooth/Wi-Fi traffic and AOA remain to be validated on this image.
 
 ## Host development
 
@@ -20,4 +20,4 @@ Copy `scripts/opi3-diagnose.sh` to the board and run it as root. It only reads s
 
 All setup scripts here are explicitly for the Orange Pi. `install-armbian.sh` installs runtime dependencies and enables services on the target board; do not run it on the development PC. Build the native ARM64 programs first. The installer checks prerequisites and does not force a USB role or load a guessed vendor driver.
 
-See [`HARDWARE.md`](HARDWARE.md) and [`TESTING.md`](TESTING.md) for evidence and validation gates. Hardware results remain pending until run on the board.
+See [`HARDWARE.md`](HARDWARE.md) and [`TESTING.md`](TESTING.md) for observed hardware evidence and the remaining validation gates.

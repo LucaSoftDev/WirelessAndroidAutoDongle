@@ -1,0 +1,48 @@
+#!/bin/sh
+# Configure the target's wlan0 for the upstream proxy's 10.0.0.1 endpoint.
+set -eu
+
+CONFIG=/etc/aawgd.conf
+[ ! -r "$CONFIG" ] || . "$CONFIG"
+
+SSID=${AAWG_WIFI_SSID:-AAWirelessDongle}
+PASSWORD=${AAWG_WIFI_PASSWORD:-ConnectAAWirelessDongle}
+COUNTRY=${AAWG_COUNTRY_CODE:-BR}
+
+case "$SSID" in
+    ''|*[!A-Za-z0-9_.-]*) echo 'SSID must use only letters, digits, dot, underscore or hyphen.' >&2; exit 1 ;;
+esac
+if [ "${#PASSWORD}" -lt 8 ] || [ "${#PASSWORD}" -gt 63 ] || ! printf '%s\n' "$PASSWORD" | LC_ALL=C grep -Eq '^[ -~]{8,63}$'; then
+    echo 'Wi-Fi password must be 8 to 63 printable ASCII characters.' >&2
+    exit 1
+fi
+case "$COUNTRY" in
+    [A-Z][A-Z]) ;;
+    *) echo 'Wi-Fi country must be a two-letter uppercase ISO code.' >&2; exit 1 ;;
+esac
+
+ip link set wlan0 down 2>/dev/null || true
+ip address flush dev wlan0
+ip address add 10.0.0.1/24 dev wlan0
+ip link set wlan0 up
+
+install -d -m 0755 /run/hostapd
+umask 077
+cat > /run/aawg-hostapd.conf <<EOF
+ctrl_interface=/run/hostapd
+interface=wlan0
+driver=nl80211
+ssid=$SSID
+country_code=$COUNTRY
+ieee80211d=1
+hw_mode=a
+channel=36
+ieee80211n=1
+ieee80211ac=1
+wmm_enabled=1
+auth_algs=1
+wpa=2
+wpa_key_mgmt=WPA-PSK
+rsn_pairwise=CCMP
+wpa_passphrase=$PASSWORD
+EOF

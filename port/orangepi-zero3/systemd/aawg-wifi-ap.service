@@ -1,0 +1,17 @@
+[Unit]
+Description=Wireless Android Auto 5 GHz access point
+After=systemd-modules-load.service aw859a-wifi.service
+Requires=aw859a-wifi.service
+Before=aawg-dnsmasq.service aawgd.service
+Wants=aawg-dnsmasq.service
+
+[Service]
+Type=simple
+ExecStartPre=/usr/local/sbin/aawg-wifi-ap-configure
+ExecStart=/usr/sbin/hostapd /run/aawg-hostapd.conf
+ExecStopPost=/bin/sh -c '/usr/sbin/ip address flush dev wlan0; /usr/sbin/ip link set wlan0 down'
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
