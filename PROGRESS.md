@@ -70,3 +70,14 @@ Date: 2026-10-25
 ## Next recommended task
 
 Run the read-only board diagnostic from the user's root console and restore SSH command execution. Inspect/unbind any temporary gadget, then validate default MTP/FunctionFS and the host-initiated AOA handshake. The installed kernel is the verified AOA-capable `6.18.58`; proceed with proxy services and real head-unit/phone validation only after USB gadget state is clean.
+
+## Offline SSH recovery (2026-10-25)
+
+- After another board reboot, `192.168.15.73` still answered ping but actively refused TCP/22. A scan of the local `/24` found no SSH endpoint matching the Orange Pi; other SSH hosts were unrelated.
+- The user inserted the microSD into the PC's USB reader. Windows sees a 15.93 GB removable disk with one Linux partition beginning at 4 MiB. WSL cannot attach this USB reader directly, so a temporary sparse image was made by reading the partition; the card itself was not modified during inspection.
+- The persistent filesystem journal was pending recovery. `e2fsck -fy` on the temporary image replayed it and repaired the image; a follow-up `e2fsck -fn` passed.
+- Inspection found `ssh.service` enabled and `sshd` installed, with `PermitRootLogin yes`, `PubkeyAuthentication yes`, no `sshd_not_to_be_run` marker, and the current PC's root public key present in `/root/.ssh/authorized_keys`.
+- The captured current-boot journal shows DHCP obtaining `192.168.15.73`, reaching `sockets.target`, and starting AW859A Wi-Fi/Bluetooth and `wpa_supplicant`; it contains no `ssh.service` start or `multi-user.target` record. This suggests startup is stalling before the normal SSH service starts; the exact blocker is not yet proven.
+- Prepared a recovery on the temporary filesystem image: enabled Debian's packaged `ssh.socket` under `sockets.target.wants` and added `/etc/systemd/system/ssh.service.d/early-ssh.conf` to remove the `network.target` ordering dependency. `e2fsck -fn` passed after these changes.
+- Compared the repaired image against the physical card and wrote only seven differing 1 MiB chunks (7 MiB total). Each written chunk was read back and verified; the full 15.77 GB partition scan completed. The image is at `F:\opi3-recovery\rootfs.ext4.img` and should be retained until SSH is verified.
+- Not yet tested: booting the card after this offline recovery, SSH socket activation, or any Android Auto behavior. The board must have this microSD reinserted and powered before SSH can be tested again.
