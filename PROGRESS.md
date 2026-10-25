@@ -9,6 +9,7 @@ Date: 2026-10-25
 - Real USB data path validated: a temporary CDC ACM configfs gadget reached UDC state `configured`; Windows enumerated `USB Composite Device` (`VID_1D6B:0104`) and `USB Serial Device (COM5)`. The temporary CDC gadget was removed.
 - A direct bind of the AOA accessory gadget (`VID_18D1:2D00`) did **not** enumerate on Windows. This is not yet a valid Android Accessory handshake test: upstream `aawgd` normally binds the default MTP gadget first and switches to the AOA gadget only after the host sends the AOA start request. No compatible Android Auto head unit or phone session has been tested.
 - Tried bringing up the default MTP gadget for a Windows-side enumeration check, but the matching systemd units are not installed and subsequent SSH command sessions stopped returning command output (SSH authentication/TCP still succeed). Target state may therefore contain a temporary configfs binding; recover SSH/serial or reboot the board, then inspect both gadget `UDC` attributes and unbind them before continuing. Do not claim AOA enumeration passed.
+- After the user rebooted the board, ICMP and TCP/22 remained reachable and SSH public-key authentication succeeded, but new SSH command sessions and SFTP still did not return output. The board-side inspection therefore remains blocked; use the already-open root console to run the read-only diagnostic below before further gadget changes.
 - No project services were installed or enabled on the board. No Wi-Fi AP, phone pairing, Wireless Android Auto, or head-unit tests have been run.
 
 ## Investigated
@@ -56,4 +57,4 @@ Date: 2026-10-25
 
 ## Next recommended task
 
-Restore target command access (or reboot/reconnect over serial), inspect and unbind any temporary gadget, then validate the default MTP gadget and the host-initiated AOA handshake. The installed kernel is now the verified AOA-capable `6.18.58`; next proceed with the board service configuration and real head-unit/phone validation only after USB gadget state is clean.
+Run the read-only board diagnostic from the user's root console and restore SSH command execution. Inspect/unbind any temporary gadget, then validate default MTP/FunctionFS and the host-initiated AOA handshake. The installed kernel is the verified AOA-capable `6.18.58`; proceed with proxy services and real head-unit/phone validation only after USB gadget state is clean.
