@@ -12,6 +12,14 @@ Date: 2026-10-25
 - After the user rebooted the board, ICMP and TCP/22 remained reachable and SSH public-key authentication succeeded, but new SSH command sessions and SFTP still did not return output. The board-side inspection therefore remains blocked; use the already-open root console to run the read-only diagnostic below before further gadget changes.
 - No project services were installed or enabled on the board. No Wi-Fi AP, phone pairing, Wireless Android Auto, or head-unit tests have been run.
 
+### Kernel lockup investigation (in progress)
+
+- The board's `dmesg` after booting the AOA-capable 6.18.58 kernel repeatedly reports `BUG: workqueue lockup` on the `events` pool, with an in-flight `android_work [libcomposite]` callback. This is a confirmed kernel stall, but the captured output did not include a stack trace, so the precise cause remains unproven.
+- Added a follow-up kernel patch to stop scheduling configfs's generic `USB_STATE` uevent worker from Android control requests and disconnect. The project's AOA setup request dispatch, `acc_ctrlrequest_composite()`, and accessory `ACCESSORY=START` handling remain in place. This is a mitigation hypothesis and requires board validation.
+- Rebuilt candidate `26.11.0-trunk.110` with the first version of that patch; the source patch applied and kernel compilation started. That build has not completed yet. The local patch was then cleaned to remove an empty post-configuration block; the in-flight build has the behaviorally equivalent version with the empty block.
+- Do not treat the candidate as stable or claim that it fixes the lockup until the package is built, installed, and the board is observed under USB/AOA activity for an extended period.
+- The candidate build completed successfully in 17:50. The image package reports `26.11.0-trunk.110` / ARM64 and contains `usb_f_accessory.ko` and `musb_hdrc.ko`; its config has `CONFIG_USB_MUSB_GADGET=y`, `CONFIG_USB_CONFIGFS_UEVENT=y`, and `CONFIG_USB_CONFIGFS_F_ACC=y`. Package artifacts are in ignored `port/orangepi-zero3/build/kernel-candidate-lockup-mitigation/`. SHA-256 DTB: `05508d4f26a4a23152e435fbe2af4f7b3bd787b3bf494fbff2d712afdf188a6f`; image: `ea7186309ab2f006a11addd6231093eeb34b1a7acb5740408fa04b6290b99cc1`.
+
 ## Investigated
 
 - Cloned `nisargjhaveri/WirelessAndroidAutoDongle` (`main`, initial checkout `ef64522`) and initialized its pinned Buildroot submodule (`3815d578c5759fa824322ea3d95ad51b55ab888e`).
@@ -54,6 +62,7 @@ Date: 2026-10-25
 - Confirm the actual board revision's USB-C power/VBUS behavior and test the normal AOA host-initiated handshake against the car head unit or a suitable test host without back-feeding power.
 - Complete end-to-end Android Auto and power-cut/endurance testing on the Peugeot head unit.
 - The installer and systemd units remain uninstalled/unenabled on the board pending USB handshake validation; current hostapd test package was installed for the temporary AP test only. No host/PC network configuration was changed.
+- The lockup mitigation kernel candidate has not been installed. Current running kernel continues to show the workqueue lockup; keep USB gadget/proxy activity paused until installing the candidate and checking boot, AOA behavior, and sustained kernel logs. The SSH command channel issue may require using the user's interactive `lucas` session or root key path.
 
 ## Next recommended task
 

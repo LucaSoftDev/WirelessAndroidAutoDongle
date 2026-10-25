@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+Subject: [PATCH] usb: configfs: don't queue unused gadget state uevents
+
+The Android Auto daemon listens for the f_accessory ACCESSORY=START event.
+It does not consume configfs USB_STATE notifications. Avoid scheduling the
+legacy android_work callback on USB control requests/disconnects; its worker
+was reported in-flight during a per-CPU events workqueue lockup on the Orange
+Pi 6.18.58 build. The captured output did not include a stack trace, so this
+patch is a mitigation hypothesis rather than a confirmed root-cause fix.
+
+---
+ drivers/usb/gadget/configfs.c | 8 --------
+ 1 file changed, 8 deletions(-)
+
+diff --git a/drivers/usb/gadget/configfs.c b/drivers/usb/gadget/configfs.c
+index aaaa00000000..bbbb11111111 100644
+--- a/drivers/usb/gadget/configfs.c
++++ b/drivers/usb/gadget/configfs.c
+@@ -1961,6 +1961,5 @@ static int android_setup(struct usb_gadget *gadget,
+ 	spin_lock_irqsave(&cdev->lock, flags);
+ 	if (!gi->connected) {
+ 		gi->connected = 1;
+-		schedule_work(&gi->work);
+ 	}
+ 	spin_unlock_irqrestore(&cdev->lock, flags);
+@@ -1983,6 +1983,0 @@ static int android_setup(struct usb_gadget *gadget,
+-	spin_lock_irqsave(&cdev->lock, flags);
+-	if (c->bRequest == USB_REQ_SET_CONFIGURATION &&
+-						cdev->config) {
+-		schedule_work(&gi->work);
+-	}
+-	spin_unlock_irqrestore(&cdev->lock, flags);
+@@ -2050,6 +2050,5 @@ static void configfs_composite_disconnect(struct usb_gadget *gadget)
+ 
+ #ifdef CONFIG_USB_CONFIGFS_UEVENT
+ 	gi->connected = 0;
+-	schedule_work(&gi->work);
+ #endif
+ 	composite_disconnect(gadget);

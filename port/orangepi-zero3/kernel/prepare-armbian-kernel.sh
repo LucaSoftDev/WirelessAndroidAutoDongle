@@ -20,6 +20,7 @@ USER_CONFIG=$ARMBIAN_DIR/userpatches/config/kernel/linux-sunxi64-current.config
 mkdir -p "$PATCH_DIR" "$(dirname -- "$USER_CONFIG")"
 cp "$REPO_DIR/aa_wireless_dongle/patches/linux/0001-Backport-and-apply-patches-for-Android-Accessory-mod.patch" "$PATCH_DIR/"
 cp "$REPO_DIR/aa_wireless_dongle/patches/linux/0002-Remove-cyclic-dependency-between-f_accessory-and-lib.patch" "$PATCH_DIR/"
+cp "$REPO_DIR/aa_wireless_dongle/patches/linux/0003-Avoid-configfs-state-workqueue-uevents.patch" "$PATCH_DIR/"
 cp "$STOCK_CONFIG" "$USER_CONFIG"
 
 for symbol in CONFIG_USB_CONFIGFS_UEVENT CONFIG_USB_CONFIGFS_F_ACC CONFIG_USB_MUSB_GADGET; do
