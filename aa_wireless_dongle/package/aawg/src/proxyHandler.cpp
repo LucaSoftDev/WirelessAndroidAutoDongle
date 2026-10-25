@@ -170,6 +170,8 @@ void AAWProxy::handleClient(int server_sock) {
 
     if (Config::instance()->getConnectionStrategy() != ConnectionStrategy::USB_FIRST) {
         if (!UsbManager::instance().enableDefaultAndWaitForAccessory(std::chrono::seconds(30))) {
+            close(m_tcp_fd);
+            m_tcp_fd = -1;
             return;
         }
     }
@@ -177,6 +179,8 @@ void AAWProxy::handleClient(int server_sock) {
     Logger::instance()->info("Opening usb accessory\n");
     if ((m_usb_fd = open("/dev/usb_accessory", O_RDWR)) < 0) {
         Logger::instance()->info("error opening /dev/usb_accessory: %s\n", strerror(errno));
+        close(m_tcp_fd);
+        m_tcp_fd = -1;
         return;
     }
 
@@ -188,6 +192,10 @@ void AAWProxy::handleClient(int server_sock) {
 
     if (setsockopt(m_tcp_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv))) {
         Logger::instance()->info("setsockopt failed: %s\n", strerror(errno));
+        close(m_usb_fd);
+        m_usb_fd = -1;
+        close(m_tcp_fd);
+        m_tcp_fd = -1;
         return;
     }
 
