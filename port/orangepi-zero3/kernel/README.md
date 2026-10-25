@@ -17,6 +17,6 @@ cd /path/to/armbian-build
 ./compile.sh kernel BOARD=orangepizero3 BRANCH=current RELEASE=trixie
 ```
 
-The staging script copies Armbian's stock `linux-sunxi64-current.config` to the matching userpatches location and adds `CONFIG_USB_CONFIGFS_UEVENT=y` and `CONFIG_USB_CONFIGFS_F_ACC=y`. It stages AOA patches in `userpatches/kernel/archive/sunxi-6.18/`.
+The staging script copies Armbian's stock `linux-sunxi64-current.config` to the matching userpatches location and adds `CONFIG_USB_CONFIGFS_UEVENT=y`, `CONFIG_USB_CONFIGFS_F_ACC=y`, and `CONFIG_USB_MUSB_GADGET=y`. It stages AOA patches in `userpatches/kernel/archive/sunxi-6.18/`.
 
 Install the resulting kernel packages only after confirming their versions and keeping a bootable SD backup. Validate USB serial gadget, AOA descriptors, `/dev/usb_accessory`, FunctionFS, Bluetooth, Wi-Fi, and boot recovery before enabling the Android Auto service.

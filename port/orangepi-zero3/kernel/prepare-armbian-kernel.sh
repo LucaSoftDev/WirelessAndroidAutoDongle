@@ -22,7 +22,7 @@ cp "$REPO_DIR/aa_wireless_dongle/patches/linux/0001-Backport-and-apply-patches-f
 cp "$REPO_DIR/aa_wireless_dongle/patches/linux/0002-Remove-cyclic-dependency-between-f_accessory-and-lib.patch" "$PATCH_DIR/"
 cp "$STOCK_CONFIG" "$USER_CONFIG"
 
-for symbol in CONFIG_USB_CONFIGFS_UEVENT CONFIG_USB_CONFIGFS_F_ACC; do
+for symbol in CONFIG_USB_CONFIGFS_UEVENT CONFIG_USB_CONFIGFS_F_ACC CONFIG_USB_MUSB_GADGET; do
     if ! grep -q "^$symbol=" "$USER_CONFIG"; then
         printf '%s=y\n' "$symbol" >>"$USER_CONFIG"
     fi
