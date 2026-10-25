@@ -1,6 +1,15 @@
 # Development progress
 
-Date: 2026-10-24
+Date: 2026-10-25
+
+## Latest hardware validation (2026-10-25)
+
+- Installed the verified Armbian `6.18.58` image and matching DTB packages on the Orange Pi after the user explicitly declined a microSD backup. The board rebooted successfully and is reachable on the network. Running kernel: `6.18.58-current-sunxi64`.
+- On the board, confirmed `/sys/class/udc/musb-hdrc.4.auto`, ConfigFS, `CONFIG_USB_MUSB_GADGET=y`, `CONFIG_USB_CONFIGFS_UEVENT=y`, and `CONFIG_USB_CONFIGFS_F_ACC=y`. `modprobe usb_f_accessory` succeeds and `/dev/usb_accessory` is created by the project's configfs setup.
+- Real USB data path validated: a temporary CDC ACM configfs gadget reached UDC state `configured`; Windows enumerated `USB Composite Device` (`VID_1D6B:0104`) and `USB Serial Device (COM5)`. The temporary CDC gadget was removed.
+- A direct bind of the AOA accessory gadget (`VID_18D1:2D00`) did **not** enumerate on Windows. This is not yet a valid Android Accessory handshake test: upstream `aawgd` normally binds the default MTP gadget first and switches to the AOA gadget only after the host sends the AOA start request. No compatible Android Auto head unit or phone session has been tested.
+- Tried bringing up the default MTP gadget for a Windows-side enumeration check, but the matching systemd units are not installed and subsequent SSH command sessions stopped returning command output (SSH authentication/TCP still succeed). Target state may therefore contain a temporary configfs binding; recover SSH/serial or reboot the board, then inspect both gadget `UDC` attributes and unbind them before continuing. Do not claim AOA enumeration passed.
+- No project services were installed or enabled on the board. No Wi-Fi AP, phone pairing, Wireless Android Auto, or head-unit tests have been run.
 
 ## Investigated
 
@@ -28,7 +37,7 @@ Date: 2026-10-24
 - On-target ARM64 build completed for `umtprd` and `aawgd`; the daemon and runtime `dbus-cxx` library are installed on the board and `ldd` resolves all shared libraries. The first attempt exposed two build defects, fixed locally: the script omitted `PKG_CONFIG=pkg-config`, and the Makefile placed link libraries before objects. The source Makefile now separates compile flags from link libraries and puts `LDLIBS` after objects.
 - On-target `iw list` advertises AP mode on both 2.4 GHz and 5 GHz. A temporary WPA2 hostapd test on channel 36 returned `AP-ENABLED` while Bluetooth remained active; the test was stopped and the regulatory setting reset. The development PC's Wi-Fi scan did not show the test SSID, so independent client discovery, DHCP, throughput and coexistence stability remain unverified.
 - A temporary ConfigFS CDC ACM gadget bound to `musb-hdrc.4.auto`; Windows enumerated `USB Composite Device` (`VID_1D6B&PID_0104`) and `USB Serial Device (COM5)`. The test gadget was unbound and removed. This confirms the USB-C data path and generic peripheral gadget functionality with this setup.
-- The currently installed `6.18.57` kernel still lacks `CONFIG_USB_CONFIGFS_F_ACC`/`usb_f_accessory`, so `/dev/usb_accessory` is absent and the upstream daemon remains blocked on the board. The separate, verified `6.18.58` candidate enables AOA and MUSB gadget mode but has not yet been installed.
+- The previously installed `6.18.57` kernel lacked `CONFIG_USB_CONFIGFS_F_ACC`; it has been replaced by the verified `6.18.58` kernel described above.
 - Confirmed Armbian's `orangepizero3` framework selects Linux `6.18.58` for the current branch and the `uwe5622-allwinner` extension. Staged the upstream AOA patches and enabled `CONFIG_USB_CONFIGFS_UEVENT=y`, `CONFIG_USB_CONFIGFS_F_ACC=y`, and `CONFIG_USB_MUSB_GADGET=y`. Updated the first AOA patch for the 6.18 ConfigFS include layout and HID API. The patches apply and the ARM64 cross-build completes.
 - Kernel cross-build attempts exposed case-colliding Linux file paths in the Windows-originated Armbian checkout (`xt_DSCP.h`/`xt_dscp.h`, similar netfilter headers and `.c` files). Restoring the tracked files in the Armbian pre-build step allowed the build past compile errors and through module compilation to `modpost`; `modpost` then reported duplicate exports from `xt_RATEEST`/`xt_rateest`, leading to a broader restore list for all colliding paths.
 - After freeing space on `C:`, Docker still had damaged/unavailable containerd blobs. With authorization, Docker Desktop and its WSL backend were restarted to release the busy data disk; the persistent `opi3-armbian-build` volume was readable afterward. No volumes or images were removed. The separate PostgreSQL container restarted and is running again.
@@ -39,13 +48,12 @@ Date: 2026-10-24
 ## Pending / blockers
 
 - The corrected native ARM64 build script completed end-to-end on the Orange Pi; both target binaries were rebuilt and installed.
-- Provision the persistent project services only after resolving kernel AOA support. Do not enable the current daemon service: its preflight correctly fails without `/dev/usb_accessory` and AOA configfs support.
-- Make a full backup or clone of the bootable microSD before installing the verified 6.18.58 AOA kernel candidate. Then install the matching image/DTB packages and verify boot recovery, `/sys/class/udc`, ConfigFS, FunctionFS and AOA enumeration. Do not enable the proxy service until those hardware checks pass.
+- Recover target command access and clean up any temporarily bound gadget before proceeding. Kernel/UDC/AOA function prerequisites are now present; normal AOA host-initiated handshake and MTP/FunctionFS behavior still need validation. Do not enable the proxy service until these checks pass.
 - Verify AP discovery from a separate phone/client, DHCP, sustained throughput, and Wi-Fi/Bluetooth coexistence. Bluetooth Classic HCI is active, but phone pairing, SDP, and RFCOMM profile exchange have not been validated.
-- Confirm the actual board revision's USB-C power/VBUS behavior and test generic gadget and AOA enumeration against a separate host without back-feeding power.
+- Confirm the actual board revision's USB-C power/VBUS behavior and test the normal AOA host-initiated handshake against the car head unit or a suitable test host without back-feeding power.
 - Complete end-to-end Android Auto and power-cut/endurance testing on the Peugeot head unit.
-- The installer and systemd units remain uninstalled/unenabled on the board pending AOA kernel validation; current hostapd test package was installed for the temporary AP test only. No host/PC network configuration was changed.
+- The installer and systemd units remain uninstalled/unenabled on the board pending USB handshake validation; current hostapd test package was installed for the temporary AP test only. No host/PC network configuration was changed.
 
 ## Next recommended task
 
-Back up the bootable microSD, install the verified 6.18.58 kernel image and DTB packages, then run the on-board gadget/AOA validation sequence. The built candidate is retained under ignored `port/orangepi-zero3/build/kernel-candidate/`; do not install it until the card backup is available.
+Restore target command access (or reboot/reconnect over serial), inspect and unbind any temporary gadget, then validate the default MTP gadget and the host-initiated AOA handshake. The installed kernel is now the verified AOA-capable `6.18.58`; next proceed with the board service configuration and real head-unit/phone validation only after USB gadget state is clean.
