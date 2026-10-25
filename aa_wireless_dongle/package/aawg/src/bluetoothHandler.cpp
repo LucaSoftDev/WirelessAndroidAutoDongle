@@ -198,14 +198,16 @@ void BluetoothHandler::connectDevice() {
 
         std::shared_ptr<DBus::ObjectProxy> bluezDevice = m_connection->create_object_proxy(BLUEZ_BUS_NAME, device_path);
         DBus::MethodProxy connectProfile = *(bluezDevice->create_method<void(std::string)>(INTERFACE_BLUEZ_DEVICE, "ConnectProfile"));
-        DBus::MethodProxy disconnect = *(bluezDevice->create_method<void()>(INTERFACE_BLUEZ_DEVICE, "Disconnect"));
 
         std::shared_ptr<DBus::PropertyProxy<bool>> deviceConnected = bluezDevice->create_property<bool>(INTERFACE_BLUEZ_DEVICE, "Connected");
 
         try {
-            if (deviceConnected) {
-                Logger::instance()->info("Bluetooth device already connected, disconnecting\n");
-                disconnect();
+            if (deviceConnected && deviceConnected->value()) {
+                Logger::instance()->info("Bluetooth device already connected, skipping reconnect\n");
+                if (!isDongleMode) {
+                    return;
+                }
+                continue;
             }
             connectProfile(isDongleMode ? "" : HSP_AG_UUID);
             Logger::instance()->info("Bluetooth connected to the device\n");
