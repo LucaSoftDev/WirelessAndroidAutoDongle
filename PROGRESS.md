@@ -63,6 +63,7 @@ Date: 2026-10-25
 - Complete end-to-end Android Auto and power-cut/endurance testing on the Peugeot head unit.
 - The installer and systemd units remain uninstalled/unenabled on the board pending USB handshake validation; current hostapd test package was installed for the temporary AP test only. No host/PC network configuration was changed.
 - The lockup mitigation kernel candidate has not been installed. Current running kernel continues to show the workqueue lockup; keep USB gadget/proxy activity paused until installing the candidate and checking boot, AOA behavior, and sustained kernel logs. The SSH command channel issue may require using the user's interactive `lucas` session or root key path.
+- After producing the candidate, a fresh root-key SSH health check (`uname -r; uptime`, batch mode, 5-second connect timeout) failed with `Timeout, server 192.168.15.73 not responding.` No remote install was attempted. Restore board command access or use the local interactive session before installing anything.
 
 ## Next recommended task
 
