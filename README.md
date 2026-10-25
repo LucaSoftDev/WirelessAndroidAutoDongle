@@ -1,6 +1,6 @@
 # Wireless Android Auto Dongle
 
-DIY Wireless Android Auto adapter to use with a car that supports only wired Android Auto using a Raspberry Pi.
+DIY Wireless Android Auto adapter for cars that support wired Android Auto. The upstream project targets Raspberry Pi boards; see the experimental Orange Pi Zero 3 port below.
 
 This repository consists of the buildroot setup to generate an sd card image to create your own Wireless Android Auto adapter.
 
@@ -8,7 +8,7 @@ This repository consists of the buildroot setup to generate an sd card image to 
 - Native Wireless Android Auto connection to the phone, no extra app needed on the phone.
 - Passes through all Android Auto traffic without any modifications to ensure seamless and safe experience.
 - Fast bootup, connection under 30 seconds.
-- Supports multiple boards (Currently multiple Raspberry Pi boards).
+- Supports multiple boards (the upstream image targets Raspberry Pi; an experimental Armbian port is available for Orange Pi Zero 3).
 
 ## Supported Hardware
 This is currently tested and built for the following Raspberry Pi boards supporting USB OTG.
@@ -16,6 +16,16 @@ This is currently tested and built for the following Raspberry Pi boards support
 - **Raspberry Pi Zero 2 W**
 - **Raspberry Pi 3 A+** _(Raspberry Pi 3 B+ is not supported due to lack of USB OTG support.)_
 - **Raspberry Pi 4**
+
+### Orange Pi Zero 3 port (Armbian prototype)
+
+An Armbian port reuses the upstream `aawgd` Bluetooth/Wi-Fi negotiation and USB/TCP forwarder. The tested board is an Orange Pi Zero 3 (Allwinner H618) running Armbian with kernel `6.18.58-current-sunxi64`. Its USB-C port operates as the peripheral connection to the car; the port uses the MUSB UDC and the AW859A/UWE5622 radio.
+
+The port uses `PHONE_FIRST`: it waits for the phone's Bluetooth and Wi-Fi/TCP connection before exposing the USB gadget to the head unit. Its default AP name is `Android_Auto_Peugeot_208`.
+
+**User-reported vehicle results:** on a Peugeot 208 with a Continental head unit, Android Auto connected on the first try across subsequent ignition cycles. Waze, Spotify, and an incoming phone call worked; audio quality was reported as excellent, with one or two very brief music stutters over a drive. The proxy forwards the stream without decoding or transcoding it.
+
+This is a board-specific Armbian port, not an Orange Pi Buildroot image. Follow the [Orange Pi Zero 3 guide](port/orangepi-zero3/README.md), [hardware notes](port/orangepi-zero3/HARDWARE.md), and [test record](port/orangepi-zero3/TESTING.md); do not flash the upstream Raspberry Pi image onto the Orange Pi. Repeated power-cut recovery, heat, and long-duration endurance are still open validation items.
 
 In theory, this can be extended to more hardware in future with these basic requirements.
 
@@ -65,10 +75,10 @@ Make sure that "Wireless Android Auto" is enabled in your phone's Andriod Auto s
 Once you've already tried multiple times and it still does not work, you can ssh into the device and try to get some logs.
 
 - Set a static password by setting the `AAWG_WIFI_PASSWORD` config, and enable SSH by setting the `AAWG_ENABLE_SSH` config. See [the instructions to update the configurations](#Configurations).
-- Connect the device to the headunit, let it boot and try to connect once. The logs are not persisted across reboots, so you need to get the logs in the same instance soon after you observe the issue.
-- Connect to the device using wifi (SSID: Android_Auto_Peugeot_208, Password: \<as set in the first step>).
+- Connect the device to the headunit, let it boot and try to connect once. Buildroot image logs are not persisted across reboots; the Armbian Orange Pi port keeps its journal on the SD card.
+- Connect to the device using the SSID configured in `aawgd.conf` (the Orange Pi port defaults to `Android_Auto_Peugeot_208`; password: as set in the first step).
 - SSH into the device (username: root, password: password, see relevant defconfigs e.g. [raspberrypi0w_defconfig](aa_wireless_dongle/configs/raspberrypi0w_defconfig)).
-- Once you're in, try to have a look at `/var/log/messages` file, it should have most relevant logs to start with. You can also copy the file and attach to issues you create if any.
+- For the Buildroot image, look at `/var/log/messages`; its logs are not persisted across reboots. The Armbian Orange Pi port stores the system journal on the SD card; reconnect the board to the development LAN, then use `journalctl` over SSH to inspect the car run.
 
 ## Contribute
 [Find or create a new issue](https://github.com/nisargjhaveri/WirelessAndroidAutoDongle/issues) for any bugs or improvements.

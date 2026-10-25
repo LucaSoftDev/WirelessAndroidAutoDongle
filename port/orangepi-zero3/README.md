@@ -2,11 +2,15 @@
 
 This is an Armbian bring-up layer for the upstream `aawgd` daemon. It keeps the original Bluetooth AA profile, Wi-Fi negotiation and byte-for-byte TCP/USB forwarder; it does not decode or transform Android Auto media.
 
-## Current support boundary
+## Current status and support boundary
 
-The tested Orange Pi Zero 3 and Armbian image expose `musb-hdrc.4.auto` as a USB Device Controller, and a CDC ACM ConfigFS gadget enumerated on the development PC. The kernel also has the Android Accessory ConfigFS function. This confirms the basic data path for this board/image, but not the host-initiated AOA handshake or USB-C VBUS/power behavior in the vehicle. A regular USB host port cannot substitute for the USB-C OTG data port.
+The port has completed user-reported end-to-end Android Auto sessions in a Peugeot 208 with a Continental head unit. After selecting `PHONE_FIRST` and renaming the AP, the user reports that subsequent car connection/ignition cycles start on the first try. Waze and Spotify played, and an incoming phone call worked perfectly. Audio quality was reported as excellent, with one or two very brief, non-bothersome music stutters over a drive. The proxy forwards data with `read`/`write`; it does not decode or transcode media.
 
-The tested kernel exposes `f_accessory`, and the AW859A/UWE5622 driver exposes BR/EDR Bluetooth and Wi-Fi AP mode. The project AP was visible to the development PC on 5 GHz channel 36. The daemon starts its Bluetooth profiles; a non-interactive BlueZ pairing agent is installed as a separate systemd service because the upstream Armbian setup did not launch the Buildroot image's `bt-agent`. The installer disables BlueZ's unrelated SAP plugin because it reserves RFCOMM channel 8, also used by the upstream Android Auto profile. On the physical board, excluding SAP removed the bind conflict and the Android Auto listener appeared on channel 8. Android Auto RFCOMM/Wi-Fi negotiation and AOA remain to be validated.
+The running board/image exposes `musb-hdrc.4.auto`; a CDC ACM ConfigFS gadget enumerated on a development PC, and the AOA accessory function is present in the kernel. The Orange Pi USB-C port has also been used successfully as the data and power connection to the car. The driver exposes BR/EDR Bluetooth and Wi-Fi AP mode; the AP runs on 5 GHz channel 36 with default SSID `Android_Auto_Peugeot_208`.
+
+The port reuses upstream Bluetooth AA negotiation and AOA forwarding. It uses `PHONE_FIRST`, so it waits for the phone to establish Bluetooth and Wi-Fi/TCP before exposing the USB gadget to the head unit. A separate BlueZ pairing agent is installed because the Armbian image does not launch the Buildroot image's `bt-agent`. The installer disables BlueZ's SAP plugin, which had reserved RFCOMM channel 8; after disabling it, the AA profile listener registered and the phone connected.
+
+This is a working Armbian prototype, not an upstream-supported board image. The repeatable sessions and phone call are user-reported; the fresh vehicle journal has not been independently reviewed. Repeated abrupt-power-cut recovery, filesystem checks, heat, and long-duration stability (including the historical `android_work [libcomposite]` lockup) remain to be validated. A regular USB host port cannot substitute for the USB-C OTG data port.
 
 ## Host development
 
