@@ -21,9 +21,9 @@ This is currently tested and built for the following Raspberry Pi boards support
 
 An Armbian port reuses the upstream `aawgd` Bluetooth/Wi-Fi negotiation and USB/TCP forwarder. The tested board is an Orange Pi Zero 3 (Allwinner H618) running Armbian with kernel `6.18.58-current-sunxi64`. Its USB-C port operates as the peripheral connection to the car; the port uses the MUSB UDC and the AW859A/UWE5622 radio.
 
-The port uses `PHONE_FIRST`: it waits for the phone's Bluetooth and Wi-Fi/TCP connection before exposing the USB gadget to the head unit. Its default AP name is `Android_Auto_Peugeot_208`.
+The port uses `PHONE_FIRST`: it waits for the phone's Bluetooth and Wi-Fi/TCP connection before exposing the USB gadget to the head unit. Its generic default AP name is `AAWirelessDongle`; set `AAWG_WIFI_SSID` in `aawgd.conf` to customize it.
 
-**User-reported vehicle results:** on a Peugeot 208 with a Continental head unit, Android Auto connected on the first try across subsequent ignition cycles. Waze, Spotify, and an incoming phone call worked; audio quality was reported as excellent, with one or two very brief music stutters over a drive. The proxy forwards the stream without decoding or transcoding it.
+**User-reported vehicle results:** on a Peugeot 208 with a Continental head unit, Android Auto connected on the first try across subsequent ignition cycles. For that installation, the AP was customized to `Android_Auto_Peugeot_208`. Waze, Spotify, and an incoming phone call worked; audio quality was reported as excellent, with one or two very brief music stutters over a drive. The proxy forwards the stream without decoding or transcoding it.
 
 This is a board-specific Armbian port, not an Orange Pi Buildroot image. Follow the [Orange Pi Zero 3 guide](port/orangepi-zero3/README.md), [hardware notes](port/orangepi-zero3/HARDWARE.md), and [test record](port/orangepi-zero3/TESTING.md); do not flash the upstream Raspberry Pi image onto the Orange Pi. Repeated power-cut recovery, heat, and long-duration endurance are still open validation items.
 
@@ -76,7 +76,7 @@ Once you've already tried multiple times and it still does not work, you can ssh
 
 - Set a static password by setting the `AAWG_WIFI_PASSWORD` config, and enable SSH by setting the `AAWG_ENABLE_SSH` config. See [the instructions to update the configurations](#Configurations).
 - Connect the device to the headunit, let it boot and try to connect once. Buildroot image logs are not persisted across reboots; the Armbian Orange Pi port keeps its journal on the SD card.
-- Connect to the device using the SSID configured in `aawgd.conf` (the Orange Pi port defaults to `Android_Auto_Peugeot_208`; password: as set in the first step).
+- Connect to the device using the SSID configured in `aawgd.conf` (the Orange Pi port defaults to `AAWirelessDongle`; password: as set in the first step).
 - SSH into the device (username: root, password: password, see relevant defconfigs e.g. [raspberrypi0w_defconfig](aa_wireless_dongle/configs/raspberrypi0w_defconfig)).
 - For the Buildroot image, look at `/var/log/messages`; its logs are not persisted across reboots. The Armbian Orange Pi port stores the system journal on the SD card; reconnect the board to the development LAN, then use `journalctl` over SSH to inspect the car run.
 
