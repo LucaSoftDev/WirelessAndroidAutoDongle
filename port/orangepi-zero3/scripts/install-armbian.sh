@@ -30,6 +30,7 @@ install -D -m 0755 "$SCRIPT_DIR/aawg-bluetooth-configure" /usr/local/sbin/aawg-b
 install -D -m 0755 "$SCRIPT_DIR/aawg-wifi-ap-configure" /usr/local/sbin/aawg-wifi-ap-configure
 install -D -m 0644 "$PORT_DIR/systemd/aawgd.service" /etc/systemd/system/aawgd.service
 install -D -m 0644 "$PORT_DIR/systemd/aawg-bluetooth-agent.service" /etc/systemd/system/aawg-bluetooth-agent.service
+install -D -m 0644 "$PORT_DIR/systemd/bluetoothd-no-sap.conf" /etc/systemd/system/bluetooth.service.d/10-aawg-no-sap.conf
 install -D -m 0644 "$PORT_DIR/systemd/aawg-usb-gadget.service" /etc/systemd/system/aawg-usb-gadget.service
 install -D -m 0644 "$PORT_DIR/systemd/aawg-functionfs.service" /etc/systemd/system/aawg-functionfs.service
 install -D -m 0644 "$PORT_DIR/systemd/aawg-wifi-ap.service" /etc/systemd/system/aawg-wifi-ap.service
@@ -61,5 +62,9 @@ fi
 systemctl daemon-reload
 systemctl enable aawg-usb-gadget.service aawg-functionfs.service aawg-wifi-ap.service aawg-dnsmasq.service aawg-bluetooth-agent.service
 systemctl enable aawgd.service
+if ! systemctl show bluetooth.service --property=ExecStart --value | grep -Fq -- '--noplugin=sap'; then
+    systemctl restart bluetooth.service
+fi
+systemctl start aawg-bluetooth-agent.service
 echo 'Installed. Complete the phone AOA and vehicle checks in port/orangepi-zero3/TESTING.md before relying on the dongle.'
 echo 'Run opi3-diagnose for a hardware report. Start the full stack with: systemctl start aawgd'
