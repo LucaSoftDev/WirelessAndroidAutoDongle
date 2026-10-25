@@ -17,15 +17,9 @@ This is currently tested and built for the following Raspberry Pi boards support
 - **Raspberry Pi 3 A+** _(Raspberry Pi 3 B+ is not supported due to lack of USB OTG support.)_
 - **Raspberry Pi 4**
 
-### Orange Pi Zero 3 port (Armbian prototype)
+### Orange Pi Zero 3
 
-An Armbian port reuses the upstream `aawgd` Bluetooth/Wi-Fi negotiation and USB/TCP forwarder. The tested board is an Orange Pi Zero 3 (Allwinner H618) running Armbian with kernel `6.18.58-current-sunxi64`. Its USB-C port operates as the peripheral connection to the car; the port uses the MUSB UDC and the AW859A/UWE5622 radio.
-
-The port uses `PHONE_FIRST`: it waits for the phone's Bluetooth and Wi-Fi/TCP connection before exposing the USB gadget to the head unit. Its generic default AP name is `AAWirelessDongle`; set `AAWG_WIFI_SSID` in `aawgd.conf` to customize it.
-
-**User-reported vehicle results:** on a Peugeot 208 with a Continental head unit, Android Auto connected on the first try across subsequent ignition cycles. For that installation, the AP was customized to `Android_Auto_Peugeot_208`. Waze, Spotify, and an incoming phone call worked; audio quality was reported as excellent, with one or two very brief music stutters over a drive. The proxy forwards the stream without decoding or transcoding it.
-
-This is a board-specific Armbian port, not an Orange Pi Buildroot image. Follow the [Orange Pi Zero 3 guide](port/orangepi-zero3/README.md), [hardware notes](port/orangepi-zero3/HARDWARE.md), and [test record](port/orangepi-zero3/TESTING.md); do not flash the upstream Raspberry Pi image onto the Orange Pi. Repeated power-cut recovery, heat, and long-duration endurance are still open validation items.
+The Orange Pi Zero 3 works as a Wireless Android Auto dongle with Armbian. See the [port guide](port/orangepi-zero3/README.md) for setup instructions.
 
 In theory, this can be extended to more hardware in future with these basic requirements.
 
