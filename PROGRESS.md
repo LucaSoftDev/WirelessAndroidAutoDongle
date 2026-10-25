@@ -65,6 +65,7 @@ Date: 2026-10-25
 - The lockup mitigation kernel candidate has not been installed. Current running kernel continues to show the workqueue lockup; keep USB gadget/proxy activity paused until installing the candidate and checking boot, AOA behavior, and sustained kernel logs. The SSH command channel issue may require using the user's interactive `lucas` session or root key path.
 - After the user power-cycled the board, ping and TCP/22 respond and SSH key exchange succeeds. The root key is accepted and authentication completes, but the remote session never returns a shell or command output; `lucas` batch authentication with available keys is denied. No remote install was attempted. Restore an interactive board shell or working SSH command channel before installing anything.
 - User-provided post-reboot logs confirm the same workqueue lockup persists 54 minutes after boot: `android_work [libcomposite]` is in-flight, with reported stuck duration increasing from 2826 to 2979 seconds and load average around 6. The candidate kernel therefore remains uninstalled. A further root interactive SSH attempt and package transfer both timed out after authentication/connection setup; no remote files were changed.
+- A follow-up attempted to inspect the latest `android_work` worker PID (`7941`) via `/proc`, but it no longer existed by the time `ps` and `cat` ran. No worker stack was captured; the latest `in-flight` line is only a time-specific snapshot. Installing the candidate remains blocked by the root SSH session/transfer failure.
 
 ## Next recommended task
 
