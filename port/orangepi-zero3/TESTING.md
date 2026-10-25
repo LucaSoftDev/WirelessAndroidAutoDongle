@@ -11,4 +11,14 @@ Record the exact Armbian image, kernel (`uname -a`), board revision and test dat
 7. **Vehicle:** only after bench checks, attach to the Continental head unit. Verify discovery, Android Auto startup, screen/touch, call audio and microphone, repeated reconnect and cold-power boot.
 8. **Endurance:** exercise long sessions, heat and abrupt power cuts; inspect filesystem and logs after repeated cycles. Verify media streams remain byte-forwarded without daemon-side conversion.
 
-No physical Orange Pi or Peugeot head unit was available during initial development, so all hardware steps are currently **pending**.
+## Hardware run: 2026-10-25
+
+Board access was restored by editing the SD root filesystem offline, then verified after the user reinserted and powered the card.
+
+| Step | Result | Evidence / remaining work |
+|---|---|---|
+| Boot / SSH | **Partial pass** | SSH socket and service active; root public-key login succeeded at `192.168.15.73`; board reported `Linux orangepizero3 6.18.58-current-sunxi64 #2 ... aarch64`. Full `opi3-diagnose.sh` inventory still pending. |
+| USB Gadget basic | **Pass** | ConfigFS CDC ACM gadget bound to `musb-hdrc.4.auto`, reached UDC state `configured`, then unbound and removed. UDC returned to `not attached` and gadget configfs was empty. |
+| Bluetooth, Wi-Fi AP, AOA, proxy, vehicle and endurance | **Pending** | Not executed. The short post-boot window without workqueue warnings does not resolve the earlier `android_work [libcomposite]` lockup. |
+
+The basic CDC ACM smoke test is not an AOA test and does not establish Orange Pi USB-C electrical/power behavior, AOA negotiation, or Peugeot head-unit compatibility. Continue with the AOA default-to-accessory handshake only after capturing the current kernel's complete relevant configuration and reviewing the existing AOA gadget script/service. No Peugeot head-unit test has been run.
